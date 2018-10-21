@@ -1,0 +1,4 @@
+[submodule "Opgaves"]
+	path = Opgaves
+	url = https://github.com/EAVISE/2018_labo_beeldinterpretatie
+	branch = master
