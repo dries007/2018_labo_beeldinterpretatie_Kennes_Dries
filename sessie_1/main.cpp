@@ -62,7 +62,8 @@ int main(int argc, const char **argv)
 
     // Mask output image 1
     Mat image1_mask = Mat::zeros(image1.rows, image1.cols, CV_8UC1);
-    image1_mask = ((r > 95) & (g > 40) & (b > 20) & ((max(r, max(g, b)) - min(r, min(g, b))) > 15) & (abs(r - g) > 15) & (r > g) & (r > g)) * 0xFF;
+    image1_mask = ((r > 95) & (g > 40) & (b > 20) & ((max(r, max(g, b)) - min(r, min(g, b))) > 15) & (abs(r - g) > 15) &
+                   (r > g) & (r > g)) * 0xFF;
 
     // EZ-merge
     Mat image1_bgr_merge_p1[] = {b & image1_mask, g & image1_mask, r & image1_mask};
@@ -70,17 +71,21 @@ int main(int argc, const char **argv)
     merge(image1_bgr_merge_p1, 3, image1_skin_p1);
     //cout << image1_skin << endl;
 
-    namedWindow("Display Image 1 (Skin Segmentation) part 1", WINDOW_AUTOSIZE);
     imshow("Display Image 1 (Skin Segmentation) part 1", image1_skin_p1);
 
     // PART 2
 
-    // Nuke ruis
+    // Nuke noise
     erode(image1_mask, image1_mask, Mat(), Point(-1, -1), 2);
     dilate(image1_mask, image1_mask, Mat(), Point(-1, -1), 2);
 
-    erode(image1_mask, image1_mask, Mat(), Point(-1, -1), 5);
+    imshow("Display Image 1 (Skin Segmentation) noise", image1_mask.clone());
+
+    // Glue blobs
     dilate(image1_mask, image1_mask, Mat(), Point(-1, -1), 5);
+    erode(image1_mask, image1_mask, Mat(), Point(-1, -1), 5);
+
+    imshow("Display Image 1 (Skin Segmentation) blobs", image1_mask.clone());
 
     vector<vector<Point> > contours;
     findContours(image1_mask, contours, CV_RETR_EXTERNAL, CHAIN_APPROX_NONE);
@@ -94,16 +99,12 @@ int main(int argc, const char **argv)
 
     drawContours(image1_mask, hulls, -1, 255, -1);
 
-    // convex hull
-    // teken filled hulls
-
     // EZ-merge
     Mat image1_bgr_merge_p2[] = {b & image1_mask, g & image1_mask, r & image1_mask};
     Mat image1_skin_p2;
     merge(image1_bgr_merge_p2, 3, image1_skin_p2);
     //cout << image1_skin << endl;
 
-    namedWindow("Display Image 1 (Skin Segmentation) part 2", WINDOW_AUTOSIZE);
     imshow("Display Image 1 (Skin Segmentation) part 2", image1_skin_p2);
 
 
@@ -115,14 +116,12 @@ int main(int argc, const char **argv)
     Mat image2_equalized;
     equalizeHist(image2, image2_equalized);
 
-    namedWindow("Display Image 2 (Text Segmentation) EQ", WINDOW_AUTOSIZE);
     imshow("Display Image 2 (Text Segmentation) EQ", image2_equalized);
 
     // Threshold on Histograms Equalization
     Mat image2_th_hq = Mat::zeros(image2.rows, image2.cols, CV_8UC1);
     threshold(image2_equalized, image2_th_hq, 0, 255, CV_THRESH_BINARY | CV_THRESH_OTSU);
 
-    namedWindow("Display Image 2 (Text Segmentation) TH on EQ", WINDOW_AUTOSIZE);
     imshow("Display Image 2 (Text Segmentation) TH on EQ", image2_th_hq);
 
     // CLAHE
@@ -132,14 +131,12 @@ int main(int argc, const char **argv)
     ptr->setClipLimit(1);
     ptr->apply(image2, image2_CLAHE);
 
-    namedWindow("Display Image 2 (Text Segmentation) CLAHE", WINDOW_AUTOSIZE);
     imshow("Display Image 2 (Text Segmentation) CLAHE", image2_CLAHE);
 
     // Threshold on Histograms Equalization
     Mat image2_th_clahe = Mat::zeros(image2.rows, image2.cols, CV_8UC1);
     threshold(image2_CLAHE, image2_th_clahe, 0, 255, CV_THRESH_BINARY | CV_THRESH_OTSU);
 
-    namedWindow("Display Image 2 (Text Segmentation) TH on CLAHE", WINDOW_AUTOSIZE);
     imshow("Display Image 2 (Text Segmentation) TH on CLAHE", image2_th_clahe);
 
     // Sleep & do event loop.
