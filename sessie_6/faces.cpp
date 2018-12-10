@@ -1,5 +1,8 @@
 /**
  * @author Dries Kennes (R0486630)
+ *
+ * Conclusies:
+ *  - lbp model > haar model in snelheid
  */
 
 #include <iostream>
@@ -13,7 +16,7 @@
 using namespace std;
 using namespace cv;
 
-int FPS = 30;
+//int FPS = 30;
 bool SLEEP = false;
 
 void mouseHandler(int event, int x, int y, int, void*)
@@ -25,8 +28,9 @@ void mouseHandler(int event, int x, int y, int, void*)
     }
 }
 
-int get_delay()
-{
+// Te ingewikkeld, not worth it.
+//int get_delay()
+//{
 //    static double prev_target_0 = 0;
 //    static double prev_target_1 = 0;
 //    static long prev = chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now().time_since_epoch()).count();
@@ -46,8 +50,7 @@ int get_delay()
 //    cout << "[FPS] " << (1000.0/delta) << "\t" << target << "\t" << delta << endl;
 //    // Make sure not to return 0.
 //    return delay >= 0 ? (int) delay : 1;
-    return (1000/FPS);
-}
+//}
 
 int main(int argc, const char **argv)
 {
@@ -92,7 +95,7 @@ int main(int argc, const char **argv)
 
     namedWindow("Frame");
     setMouseCallback("Frame", mouseHandler);
-    createTrackbar("FPS", "Frame", &FPS, 60);
+//    createTrackbar("FPS", "Frame", &FPS, 60);
     cout << "Click to pause & unpause";
 
     long start = chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now().time_since_epoch()).count();
@@ -113,30 +116,28 @@ int main(int argc, const char **argv)
 
         Mat gray;
         cvtColor(frame, gray, COLOR_BGR2GRAY);
-        equalizeHist(gray, gray);
+//        equalizeHist(gray, gray);
 
         vector<Rect> objects;
-        vector<int> levels;
-        vector<double> weights;
-        classifier.detectMultiScale(gray, objects, levels, weights, 1.1, 3, 0, Size(), Size(), true);
+        vector<int> numDetections; // Indication of the level of confidence
+        classifier.detectMultiScale(gray, objects, numDetections);
 
-        for (int i = 0; i < objects.size(); i++)
+        for (int i = objects.size() - 1; i >= 0; i--)
         {
             const auto &r = objects[i];
-            const auto &w = weights[i];
+            const auto &n = numDetections[i];
             Point center(r.x + r.width/2, r.y + r.height/2);
-            circle(frame, center, (r.width + r.height)/2, color);
-            putText(frame, to_string((int)w), r.tl(), FONT_HERSHEY_PLAIN, 1, color);
+            rectangle(frame, r, color);
+            circle(frame, center, (int)(1.4 * (r.width + r.height) / 4), color);
+            putText(frame, to_string(n), r.br(), FONT_HERSHEY_PLAIN, 1, color);
         }
 
         imshow("Frame", frame);
 
-        while (SLEEP) if (waitKey(1) == '\x1B') break;
+        while (SLEEP) if (waitKey(1) == '\x1B') return 0;
     }
-    while (waitKey(get_delay()) != '\x1B'); // Sleep & do event loop.
-
-    video.release();
-    destroyAllWindows();
+    while (waitKey(1) != '\x1B'); // Sleep & do event loop.
+    //while (waitKey(get_delay()) != '\x1B'); // Sleep & do event loop.
 
     return 0;
 }
